@@ -1,70 +1,67 @@
 import tkinter as tk
 from tkinter import messagebox
 
-RUSSIAN_ALPHABET_SIZE = 32
+RUSSIAN_ALPHABET = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+RUSSIAN_ALPHABET_SIZE = len(RUSSIAN_ALPHABET)
 ASCII_PRINTABLE_SIZE = 95
-RUSSIAN_UPPER_START = ord('А')
-RUSSIAN_LOWER_START = ord('а')
 ASCII_PRINTABLE_START = 32
 ASCII_PRINTABLE_END = 126
 
+RUS_UPPER = {c: i for i, c in enumerate(RUSSIAN_ALPHABET)}
+RUS_LOWER = {c.lower(): i for i, c in enumerate(RUSSIAN_ALPHABET)}
+
 def shift_char(char, shift):
-    if 'А' <= char <= 'Я':
-        start = RUSSIAN_UPPER_START
-        return chr(start + (ord(char) - start + shift) % RUSSIAN_ALPHABET_SIZE)
-    elif 'а' <= char <= 'я':
-        start = RUSSIAN_LOWER_START
-        return chr(start + (ord(char) - start + shift) % RUSSIAN_ALPHABET_SIZE)
+    if char in RUS_UPPER:
+        new_index = (RUS_UPPER[char] + shift) % RUSSIAN_ALPHABET_SIZE
+        return RUSSIAN_ALPHABET[new_index]
+    elif char in RUS_LOWER:
+        new_index = (RUS_LOWER[char] + shift) % RUSSIAN_ALPHABET_SIZE
+        return RUSSIAN_ALPHABET[new_index].lower()
     elif ASCII_PRINTABLE_START <= ord(char) <= ASCII_PRINTABLE_END:
-        new_char_code = ASCII_PRINTABLE_START + (ord(char) - ASCII_PRINTABLE_START + shift) % ASCII_PRINTABLE_SIZE
-        return chr(new_char_code)
+        return chr(ASCII_PRINTABLE_START + (ord(char) - ASCII_PRINTABLE_START + shift) % ASCII_PRINTABLE_SIZE)
     return char
 
 def caesar_cipher(text, shift):
     return ''.join(shift_char(char, shift) for char in text)
 
 def process_text(encrypting=True):
-    try:
-        text = entry_text.get("1.0", tk.END).strip()
-        shift = int(entry_shift.get())
-        if not text:
-            messagebox.showwarning("Предупреждение", "Поле текста не должно быть пустым!")
-            return
-        if not encrypting:
-            text = entry_result.get("1.0", tk.END).strip()
-            shift = -shift
-        entry_result.delete("1.0", tk.END)
-        entry_result.insert("1.0", caesar_cipher(text, shift))
-    except ValueError:
+    text = entry_text.get("1.0", tk.END).strip()
+    shift_input = entry_shift.get().strip()
+
+    if not text:
+        messagebox.showwarning("Предупреждение", "Поле текста не должно быть пустым!")
+        return
+    if not shift_input.isdigit() and not (shift_input.startswith('-') and shift_input[1:].isdigit()):
         messagebox.showerror("Ошибка", "Сдвиг должен быть целым числом!")
+        return
+
+    shift = int(shift_input)
+    if not encrypting:
+        text = entry_result.get("1.0", tk.END).strip()
+        shift = -shift
+
+    result_text = caesar_cipher(text, shift)
+    entry_result.delete("1.0", tk.END)
+    entry_result.insert("1.0", result_text)
 
 root = tk.Tk()
 root.title("Шифр Цезаря")
 root.geometry("400x300")
 root.resizable(False, False)
 
-label_text = tk.Label(root, text="Введите текст:")
-label_text.pack()
-entry_text = tk.Text(root, height=5, width=50)
-entry_text.pack()
+tk.Label(root, text="Введите текст:").grid(row=0, column=0, sticky="w", padx=10, pady=5)
+entry_text = tk.Text(root, height=4, width=50)
+entry_text.grid(row=1, column=0, columnspan=2, padx=10)
 
-label_shift = tk.Label(root, text="Введите сдвиг:")
-label_shift.pack()
+tk.Label(root, text="Введите сдвиг:").grid(row=2, column=0, sticky="w", padx=10, pady=5)
 entry_shift = tk.Entry(root)
-entry_shift.pack()
+entry_shift.grid(row=2, column=1, padx=10)
 
-frame_buttons = tk.Frame(root)
-frame_buttons.pack()
+tk.Button(root, text="Зашифровать", command=lambda: process_text(True)).grid(row=3, column=0, padx=10, pady=5)
+tk.Button(root, text="Расшифровать", command=lambda: process_text(False)).grid(row=3, column=1, padx=10, pady=5)
 
-button_encrypt = tk.Button(frame_buttons, text="Зашифровать", command=lambda: process_text(True))
-button_encrypt.pack(side=tk.LEFT, padx=5)
-
-button_decrypt = tk.Button(frame_buttons, text="Расшифровать", command=lambda: process_text(False))
-button_decrypt.pack(side=tk.RIGHT, padx=5)
-
-label_result = tk.Label(root, text="Результат:")
-label_result.pack()
-entry_result = tk.Text(root, height=5, width=50)
-entry_result.pack()
+tk.Label(root, text="Результат:").grid(row=4, column=0, sticky="w", padx=10, pady=5)
+entry_result = tk.Text(root, height=4, width=50)
+entry_result.grid(row=5, column=0, columnspan=2, padx=10)
 
 root.mainloop()
