@@ -14,7 +14,7 @@ def seed_encrypt(plain_text, key):
     return cipher_text
 
 def seed_decrypt(cipher_text, key):
-    return seed_encrypt(cipher_text, key)  # Симметричный процесс
+    return seed_encrypt(cipher_text, key)
 
 def encrypt():
     text = input_text.get()
@@ -44,7 +44,6 @@ def decrypt():
     except ValueError:
         messagebox.showerror("Ошибка", "Неверный формат ключа")
 
-# Создание графического интерфейса
 root = tk.Tk()
 root.title("SEED Шифрование")
 
