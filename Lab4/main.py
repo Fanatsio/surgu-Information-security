@@ -3,6 +3,7 @@ from tkinter import messagebox
 import random
 
 def mod_exp(base, exp, mod):
+    """Быстрое возведение в степень по модулю (алгоритм быстрого возведения в степень)."""
     result = 1
     while exp > 0:
         if exp % 2 == 1:
@@ -11,26 +12,47 @@ def mod_exp(base, exp, mod):
         exp //= 2
     return result
 
+def mod_inverse(a, mod):
+    """Нахождение обратного элемента по модулю с использованием встроенной функции pow()."""
+    return pow(a, -1, mod)
+
 def generate_keys():
-    q = 23  # Простое число
-    p = 47  # Простое число, p = kq + 1
-    g = 2   # Генератор g < p
-    x = random.randint(1, q - 1)  # Закрытый ключ
-    y = mod_exp(g, x, p)  # Открытый ключ
+    """Генерация параметров алгоритма DSA и ключей."""
+    q = 23  # Малое простое число (используется для демонстрации)
+    p = 47  # p = kq + 1, где k = 2
+    g = 2   # Генератор, выбранный так, чтобы g < p
+    x = random.randint(1, q - 1)  # Приватный ключ (секретный)
+    y = mod_exp(g, x, p)  # Публичный ключ
     return p, q, g, x, y
 
+def hash_message(message):
+    """Генерация хэша сообщения с использованием встроенной hash() функции."""
+    return abs(hash(message)) % 23  # Используем q=23 для демонстрации
+
 def sign_message(message, p, q, g, x):
-    k = random.randint(1, q - 1)
-    r = mod_exp(g, k, p) % q
-    s = ((hash(message) + x * r) * pow(k, -1, q)) % q
+    """Создание цифровой подписи (r, s) по DSA."""
+    h = hash_message(message)  # Получаем хэш от сообщения
+    while True:
+        k = random.randint(1, q - 1)  # Генерируем случайное k
+        r = mod_exp(g, k, p) % q  # r = (g^k mod p) mod q
+        if r == 0:
+            continue  # r не должен быть 0
+        k_inv = mod_inverse(k, q)  # k^(-1) mod q
+        s = (k_inv * (h + x * r)) % q  # s = (h + xr) * k^(-1) mod q
+        if s != 0:
+            break  # s не должен быть 0
     return r, s
 
 def verify_signature(message, r, s, p, q, g, y):
-    w = pow(s, -1, q)
-    u1 = (hash(message) * w) % q
-    u2 = (r * w) % q
-    v = ((mod_exp(g, u1, p) * mod_exp(y, u2, p)) % p) % q
-    return v == r
+    """Проверка цифровой подписи (r, s)."""
+    if not (0 < r < q and 0 < s < q):
+        return False  # r и s должны быть в диапазоне (0, q)
+    h = hash_message(message)
+    w = mod_inverse(s, q)  # Вычисляем w = s^(-1) mod q
+    u1 = (h * w) % q  # u1 = (h * w) mod q
+    u2 = (r * w) % q  # u2 = (r * w) mod q
+    v = ((mod_exp(g, u1, p) * mod_exp(y, u2, p)) % p) % q  # v = ((g^u1 * y^u2) mod p) mod q
+    return v == r  # Подпись верна, если v == r
 
 def generate_and_display_keys():
     global p, q, g, x, y
@@ -55,15 +77,9 @@ def sign():
 def verify():
     message = input_text.get()
     signature = result_text.get(1.0, tk.END).strip()
-    if not message or not signature:
-        messagebox.showwarning("Ошибка", "Введите текст и подпись для проверки")
-        return
-    try:
-        r, s = map(int, signature.replace("r=", "").replace("s=", "").split("\n"))
-        valid = verify_signature(message, r, s, p, q, g, y)
-        messagebox.showinfo("Результат", "Подпись верна" if valid else "Подпись неверна")
-    except Exception:
-        messagebox.showerror("Ошибка", "Неверный формат подписи")
+    r, s = map(int, signature.replace("r=", "").replace("s=", "").split("\n"))
+    valid = verify_signature(message, r, s, p, q, g, y)
+    messagebox.showinfo("Результат", "Подпись верна" if valid else "Подпись неверна")
 
 root = tk.Tk()
 root.title("DSA Подпись")
@@ -81,7 +97,7 @@ tk.Button(root, text="Генерировать ключи", command=generate_and
 tk.Button(root, text="Подписать", command=sign).pack()
 tk.Button(root, text="Проверить подпись", command=verify).pack()
 
-result_label = tk.Label(root, text="Подпись")
+result_label = tk.Label(root, text="Подпись:")
 result_label.pack()
 
 result_text = tk.Text(root, width=50, height=3, state='disabled')

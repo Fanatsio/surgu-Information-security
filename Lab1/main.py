@@ -2,66 +2,82 @@ import tkinter as tk
 from tkinter import messagebox
 
 RUSSIAN_ALPHABET = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+ASCII_PRINTABLE_START, ASCII_PRINTABLE_END = 32, 126
+ASCII_PRINTABLE_SIZE = ASCII_PRINTABLE_END - ASCII_PRINTABLE_START + 1
 RUSSIAN_ALPHABET_SIZE = len(RUSSIAN_ALPHABET)
-ASCII_PRINTABLE_SIZE = 95
-ASCII_PRINTABLE_START = 32
-ASCII_PRINTABLE_END = 126
 
 RUS_UPPER = {c: i for i, c in enumerate(RUSSIAN_ALPHABET)}
 RUS_LOWER = {c.lower(): i for i, c in enumerate(RUSSIAN_ALPHABET)}
 
 def shift_char(char, shift):
+    """Сдвиг символа на заданное значение в зависимости от алфавита."""
     if char in RUS_UPPER:
-        new_index = (RUS_UPPER[char] + shift) % RUSSIAN_ALPHABET_SIZE
-        return RUSSIAN_ALPHABET[new_index]
+        return RUSSIAN_ALPHABET[(RUS_UPPER[char] + shift) % RUSSIAN_ALPHABET_SIZE]
     elif char in RUS_LOWER:
-        new_index = (RUS_LOWER[char] + shift) % RUSSIAN_ALPHABET_SIZE
-        return RUSSIAN_ALPHABET[new_index].lower()
+        return RUSSIAN_ALPHABET[(RUS_LOWER[char] + shift) % RUSSIAN_ALPHABET_SIZE].lower()
     elif ASCII_PRINTABLE_START <= ord(char) <= ASCII_PRINTABLE_END:
         return chr(ASCII_PRINTABLE_START + (ord(char) - ASCII_PRINTABLE_START + shift) % ASCII_PRINTABLE_SIZE)
     return char
 
 def caesar_cipher(text, shift):
+    """Применение шифра Цезаря к тексту."""
     return ''.join(shift_char(char, shift) for char in text)
 
 def process_text(encrypting=True):
-    text = entry_text.get("1.0", tk.END).strip()
-    shift_input = entry_shift.get().strip()
-
+    """Обработка ввода, шифрование/дешифрование и вывод результата."""
+    text = entry_text.get("1.0", tk.END).strip() if encrypting else entry_result.get("1.0", tk.END).strip()
+    shift_input = shift_var.get().strip()
+    
     if not text:
         messagebox.showwarning("Предупреждение", "Поле текста не должно быть пустым!")
         return
-    if not shift_input.isdigit() and not (shift_input.startswith('-') and shift_input[1:].isdigit()):
+    
+    try:
+        shift = int(shift_input) * (-1 if not encrypting else 1)
+    except ValueError:
         messagebox.showerror("Ошибка", "Сдвиг должен быть целым числом!")
         return
-
-    shift = int(shift_input)
-    if not encrypting:
-        text = entry_result.get("1.0", tk.END).strip()
-        shift = -shift
-
+    
     result_text = caesar_cipher(text, shift)
+    
     entry_result.delete("1.0", tk.END)
     entry_result.insert("1.0", result_text)
 
+def create_label(parent, text, row, column):
+    """Создание и размещение метки."""
+    tk.Label(parent, text=text).grid(row=row, column=column, sticky="w", padx=10, pady=5)
+
+def create_text_widget(parent, height, width, row, columnspan):
+    """Создание и размещение текстового поля."""
+    widget = tk.Text(parent, height=height, width=width)
+    widget.grid(row=row, column=0, columnspan=columnspan, padx=10)
+    return widget
+
+def create_button(parent, text, command, row, column):
+    """Создание и размещение кнопки."""
+    tk.Button(parent, text=text, command=command).grid(row=row, column=column, padx=10, pady=5)
+
 root = tk.Tk()
 root.title("Шифр Цезаря")
-root.geometry("400x300")
 root.resizable(False, False)
 
-tk.Label(root, text="Введите текст:").grid(row=0, column=0, sticky="w", padx=10, pady=5)
-entry_text = tk.Text(root, height=4, width=50)
-entry_text.grid(row=1, column=0, columnspan=2, padx=10)
+create_label(root, "Введите текст:", 0, 0)
+entry_text = create_text_widget(root, 4, 50, 1, 2)
 
-tk.Label(root, text="Введите сдвиг:").grid(row=2, column=0, sticky="w", padx=10, pady=5)
-entry_shift = tk.Entry(root)
+create_label(root, "Введите сдвиг:", 2, 0)
+shift_var = tk.StringVar()
+entry_shift = tk.Entry(root, textvariable=shift_var)
 entry_shift.grid(row=2, column=1, padx=10)
 
-tk.Button(root, text="Зашифровать", command=lambda: process_text(True)).grid(row=3, column=0, padx=10, pady=5)
-tk.Button(root, text="Расшифровать", command=lambda: process_text(False)).grid(row=3, column=1, padx=10, pady=5)
+create_button(root, "Зашифровать", lambda: process_text(True), 3, 0)
+create_button(root, "Расшифровать", lambda: process_text(False), 3, 1)
 
-tk.Label(root, text="Результат:").grid(row=4, column=0, sticky="w", padx=10, pady=5)
-entry_result = tk.Text(root, height=4, width=50)
-entry_result.grid(row=5, column=0, columnspan=2, padx=10)
+create_label(root, "Результат:", 4, 0)
+entry_result = create_text_widget(root, 4, 50, 5, 2)
+
+root.update_idletasks()
+width = root.winfo_reqwidth() + 20
+height = root.winfo_reqheight() + 20
+root.geometry(f"{width}x{height}")
 
 root.mainloop()

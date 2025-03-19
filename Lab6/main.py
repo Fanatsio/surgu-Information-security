@@ -1,23 +1,18 @@
+import platform
 import math
-import tkinter as tk
-from tkinter import messagebox
 
 def left_rotate(value, shift):
     """Левый циклический сдвиг 32-битного числа."""
     return ((value << shift) | (value >> (32 - shift))) & 0xFFFFFFFF
 
 def md5(message):
-    """Реализация MD5 хеширования."""
-    # Константы
     S = [
-        [7, 12, 17, 22],  # Раунд 1
-        [5, 9, 14, 20],   # Раунд 2
-        [4, 11, 16, 23],  # Раунд 3
-        [6, 10, 15, 21]   # Раунд 4
+        [7, 12, 17, 22],
+        [5, 9, 14, 20],
+        [4, 11, 16, 23],
+        [6, 10, 15, 21]
     ]
     T = [int(2**32 * abs(math.sin(i + 1))) & 0xFFFFFFFF for i in range(64)]
-    
-    # Инициализация буфера
     A, B, C, D = 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476
     
     # Дополнение сообщения
@@ -62,42 +57,26 @@ def md5(message):
             C.to_bytes(4, byteorder='little') +
             D.to_bytes(4, byteorder='little')).hex()
 
-def calculate_md5():
-    """Вычисление MD5 и обновление интерфейса."""
-    text = entry.get()
-    if not text:
-        messagebox.showwarning("Ошибка", "Введите текст для хеширования")
+def get_hardware_info():
+    system_info = platform.system() + platform.node()
+    return system_info
+
+def check_license():
+    current_hardware_info = get_hardware_info()
+    current_hash = md5(current_hardware_info.encode('utf-8'))
+
+    try:
+        with open('license.txt', 'r') as file:
+            saved_hash = file.read().strip()
+    except FileNotFoundError:
+        with open('license.txt', 'w') as file:
+            file.write(current_hash)
+        print("Программа успешно установлена на этом компьютере.")
         return
-    
-    md5_hash = md5(text.encode('utf-8'))
-    result_entry.config(state='normal')
-    result_entry.delete(0, tk.END)
-    result_entry.insert(0, md5_hash)
-    result_entry.config(state='readonly')
 
-def copy_to_clipboard():
-    """Копирование MD5-хеша в буфер обмена."""
-    root.clipboard_clear()
-    root.clipboard_append(result_entry.get())
-    root.update()
-    messagebox.showinfo("Копирование", "Хеш скопирован в буфер обмена")
+    if current_hash == saved_hash:
+        print("Программа запущена легально.")
+    else:
+        print("Обнаружено нелегальное использование программы!")
 
-root = tk.Tk()
-root.title("MD5 Хеширование")
-root.geometry("400x250")
-
-tk.Label(root, text="Введите текст:").pack(pady=5)
-
-entry = tk.Entry(root, width=50)
-entry.pack(pady=5)
-
-tk.Button(root, text="Вычислить MD5", command=calculate_md5).pack(pady=10)
-
-tk.Label(root, text="MD5 Хеш:").pack(pady=5)
-
-result_entry = tk.Entry(root, width=50, state='readonly')
-result_entry.pack(pady=5)
-
-tk.Button(root, text="Копировать хеш", command=copy_to_clipboard).pack(pady=10)
-
-root.mainloop()
+check_license()
