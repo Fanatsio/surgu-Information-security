@@ -1,18 +1,24 @@
 import platform
 import math
+import psutil
+import uuid
 
 def left_rotate(value, shift):
     """Левый циклический сдвиг 32-битного числа."""
     return ((value << shift) | (value >> (32 - shift))) & 0xFFFFFFFF
 
 def md5(message):
+    """Реализация MD5 хеширования."""
+    # Константы
     S = [
-        [7, 12, 17, 22],
-        [5, 9, 14, 20],
-        [4, 11, 16, 23],
-        [6, 10, 15, 21]
+        [7, 12, 17, 22],  # Раунд 1
+        [5, 9, 14, 20],   # Раунд 2
+        [4, 11, 16, 23],  # Раунд 3
+        [6, 10, 15, 21]   # Раунд 4
     ]
     T = [int(2**32 * abs(math.sin(i + 1))) & 0xFFFFFFFF for i in range(64)]
+    
+    # Инициализация буфера
     A, B, C, D = 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476
     
     # Дополнение сообщения
@@ -58,25 +64,48 @@ def md5(message):
             D.to_bytes(4, byteorder='little')).hex()
 
 def get_hardware_info():
+    """Собирает детальную информацию об оборудовании"""
+    # Базовая информация о системе
     system_info = platform.system() + platform.node()
-    return system_info
+    
+    # Информация о процессоре
+    cpu_info = platform.processor()
+    
+    # Уникальный идентификатор оборудования (MAC-адрес)
+    mac_address = ':'.join(['{:02x}'.format((uuid.getnode() >> i) & 0xff) for i in range(0, 48, 8)])
+    
+    # Информация о дисках
+    disk_info = ""
+    for partition in psutil.disk_partitions():
+        disk_info += partition.device + str(psutil.disk_usage(partition.mountpoint).total)
+    
+    # Объединяем все данные
+    hardware_id = f"{system_info}{cpu_info}{mac_address}{disk_info}"
+    return hardware_id
 
 def check_license():
     current_hardware_info = get_hardware_info()
     current_hash = md5(current_hardware_info.encode('utf-8'))
 
     try:
-        with open('license.txt', 'r') as file:
+        with open('Lab6/license.txt', 'r') as file:
             saved_hash = file.read().strip()
     except FileNotFoundError:
-        with open('license.txt', 'w') as file:
+        with open('Lab6/license.txt', 'w') as file:
             file.write(current_hash)
         print("Программа успешно установлена на этом компьютере.")
-        return
+        return True
 
     if current_hash == saved_hash:
         print("Программа запущена легально.")
+        return True
     else:
         print("Обнаружено нелегальное использование программы!")
+        return False
 
-check_license()
+if __name__ == "__main__":
+    if check_license():
+        print("Программа продолжает работу...")
+    else:
+        print("Программа завершает работу.")
+        exit(1)
