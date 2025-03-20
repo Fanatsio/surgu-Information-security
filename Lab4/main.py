@@ -27,7 +27,7 @@ def generate_keys():
 
 def hash_message(message):
     """Генерация хэша сообщения с использованием встроенной hash() функции."""
-    return abs(hash(message)) % 23  # Используем q=23 для демонстрации
+    return abs(hash(message)) % 23  # Используем q=23
 
 def sign_message(message, p, q, g, x):
     """Создание цифровой подписи (r, s) по DSA."""
