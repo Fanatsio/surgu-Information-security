@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
 
-# Константы
 RUSSIAN_ALPHABET = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
 ASCII_PRINTABLE_START, ASCII_PRINTABLE_END = 32, 126
 ASCII_PRINTABLE_SIZE = ASCII_PRINTABLE_END - ASCII_PRINTABLE_START + 1
@@ -63,12 +62,10 @@ def create_button(parent, text, command, row, column):
     """Создание и размещение кнопки."""
     tk.Button(parent, text=text, command=command).grid(row=row, column=column, padx=10, pady=5)
 
-# Создание основного окна
 root = tk.Tk()
 root.title("Шифр Цезаря")
 root.resizable(False, False)
 
-# Создание и размещение элементов интерфейса
 create_label(root, "Введите текст:", 0, 0)
 entry_text = create_text_widget(root, 4, 50, 1, 2)
 
@@ -83,11 +80,9 @@ create_button(root, "Расшифровать", lambda: process_text(False), 3, 
 create_label(root, "Результат:", 4, 0)
 entry_result = create_text_widget(root, 4, 50, 5, 2)
 
-# Автоматическое определение размеров окна
 root.update_idletasks()
 width = root.winfo_reqwidth() + 20
 height = root.winfo_reqheight() + 20
 root.geometry(f"{width}x{height}")
 
-# Запуск основного цикла обработки событий
 root.mainloop()
